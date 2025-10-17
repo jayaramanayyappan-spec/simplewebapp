@@ -1,0 +1,29 @@
+# Stage 1: Build dependencies
+FROM python:3.9-slim-buster as builder
+
+WORKDIR /app
+
+# Install build dependencies if needed (e.g., for specific Python packages)
+# RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: Final image
+FROM python:3.9-slim-buster
+
+WORKDIR /app
+
+# Create a non-root user
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+# Copy installed packages from the builder stage
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+
+# Copy application code
+COPY --chown=appuser:appgroup app.py .
+
+# Set the user to the non-root user
+USER appuser
+
+EXPOSE 5000
